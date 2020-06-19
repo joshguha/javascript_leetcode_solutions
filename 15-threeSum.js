@@ -97,4 +97,4 @@ var threeSum = function (nums) {
     return result;
 };
 
-console.log(threeSum([-2, -3, 0, 0, -2]));
+console.log(threeSum([-55,-24,-18,-11,-7,-3,4,5,6,9,11,23,33]));
