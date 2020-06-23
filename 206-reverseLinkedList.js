@@ -7,11 +7,10 @@ reverseList = (head) => {
         if (next === null) {
             return node;
         }
-        reverseListIteratively(node, next, next.next);
+        return reverseListIteratively(node, next, next.next);
     };
 
-    console.log(reverseListIteratively(null, head, head.next));
-    // return reverseListIteratively(null, head, head.next);
+    return reverseListIteratively(null, head, head.next);
 };
 
 function ListNode(val, next) {
@@ -33,14 +32,3 @@ printLinkedList = (head) => {
         node = node.next;
     }
 };
-
-let reverseListIteratively = (prev, node, next) => {
-    node.next = prev;
-    if (next === null) {
-        console.log(node);
-        return node;
-    }
-    reverseListIteratively(node, next, next.next);
-};
-
-console.log(reverseListIteratively(null, a, a.next));
