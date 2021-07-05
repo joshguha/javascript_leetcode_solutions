@@ -2,144 +2,192 @@
  * @param {character[][]} board
  * @return {void} Do not return anything, modify board in-place instead.
  */
-var solveSudoku = function (board) {
-	let allPossibilities = [...board];
-	const scanRow = (i, j) => {
-		for (let rowIndex = 0; rowIndex < 9; rowIndex++) {
-			if (typeof allPossibilities[i][j] !== "string") {
-				if (allPossibilities[i][j].length === 1) {
-					allPossibilities[i][j] = allPossibilities[i][j][0];
-					completed[convertIndeces(i, j)] = true;
-					break;
-				}
-
-				if (typeof allPossibilities[i][rowIndex] === "string") {
-					const selected = allPossibilities[i][rowIndex];
-					if (allPossibilities[i][j].includes(selected)) {
-						const filteredPossibilites = allPossibilities[i][
-							j
-						].filter((possibility) => possibility !== selected);
-
-						allPossibilities[i][j] = filteredPossibilites;
-					}
-				}
+ var solveSudoku = function(board) {
+	 while (true) {
+		const prevBoard = board
+		for (let  rowIndex = 0; rowIndex < 9; rowIndex++) {
+			for (let colIndex = 0; colIndex < 9; colIndex++) {
+				const solvable = solveElement(board, rowIndex, colIndex)
+				if (!solvable) return false
 			}
 		}
-	};
+		if (isSameBoard(board, prevBoard)) break
+	 }
 
-	const scanColumn = (i, j) => {
-		for (let colIndex = 0; colIndex < 9; colIndex++) {
-			if (typeof allPossibilities[i][j] !== "string") {
-				if (allPossibilities[i][j].length === 1) {
-					allPossibilities[i][j] = allPossibilities[i][j][0];
-					completed[convertIndeces(i, j)] = true;
-					break;
-				}
+	if (isBoardSolved(board)) return board
 
-				if (typeof allPossibilities[colIndex][j] === "string") {
-					const selected = allPossibilities[colIndex][j];
-					if (allPossibilities[i][j].includes(selected)) {
-						const filteredPossibilites = allPossibilities[i][
-							j
-						].filter((possibility) => possibility !== selected);
+	const branchBoards = generateBranchBoards(board)
 
-						allPossibilities[i][j] = filteredPossibilites;
-					}
-				}
+
+
+	const solvedBoards = branchBoards.map((branchBoard) => solveSudoku(branchBoard)).filter((solvedBoard) => solvedBoard)
+
+	if (solvedBoards.length === 1){
+		for (let i = 0; i < 9; i++){
+			for (let j = 0; j < 9; j++){
+				board[i][j] = solvedBoards[0][i][j]
 			}
 		}
-	};
+		return solvedBoards[0]
+	} 
 
-	const scanSquare = (i, j) => {
-		for (let squareIndex = 0; squareIndex < 9; squareIndex++) {
-			if (typeof allPossibilities[i][j] !== "string") {
-				if (allPossibilities[i][j].length === 1) {
-					allPossibilities[i][j] = allPossibilities[i][j][0];
-					completed[convertIndeces(i, j)] = true;
-					break;
-				}
-
-				if (
-					typeof allPossibilities[mapToSquare(i, j, squareIndex).row][
-						mapToSquare(i, j, squareIndex).column
-					] === "string"
-				) {
-					const selected =
-						allPossibilities[mapToSquare(i, j, squareIndex).row][
-							mapToSquare(i, j, squareIndex).column
-						];
-
-					if (allPossibilities[i][j].includes(selected)) {
-						const filteredPossibilites = allPossibilities[i][
-							j
-						].filter((possibility) => possibility !== selected);
-
-						allPossibilities[i][j] = filteredPossibilites;
-					}
-				}
-			}
-		}
-	};
-
-	const convertIndeces = (i, j) => {
-		return i * 9 + j;
-	};
-
-	const mapToSquare = (i, j, squareIndex) => {
-		const initialRow = Math.floor(i / 3) * 3;
-		const initialCol = Math.floor(j / 3) * 3;
-
-		return {
-			row: initialRow + Math.floor(squareIndex / 3),
-			column: initialCol + (squareIndex % 3),
-		};
-	};
-
-	let completed = Array(81).fill(false);
-
-	for (let i = 0; i < 9; i++) {
-		for (let j = 0; j < 9; j++) {
-			if (allPossibilities[i][j] === ".") {
-				allPossibilities[i][j] = [
-					"1",
-					"2",
-					"3",
-					"4",
-					"5",
-					"6",
-					"7",
-					"8",
-					"9",
-				];
-			} else {
-				completed[convertIndeces(i, j)] = true;
-			}
-		}
-	}
-
-	while (true) {
-		for (let i = 0; i < 9; i++) {
-			for (let j = 0; j < 9; j++) {
-				scanRow(i, j);
-				scanColumn(i, j);
-				scanSquare(i, j);
-			}
-		}
-		console.log(completed);
-
-
-		if (completed.every((value) => value)) {
-			break;
-		}
-	}
-	for (let i = 0; i < 9; i++) {
-		for (let j = 0; j < 9; j++) {
-			board[i][j] = allPossibilities[i][j];
-		}
-	}
-
-	return board;
+	return false
 };
+
+
+
+const isBoardSolved = (board) => {
+	for (let row of board) {
+		for (let el of row) {
+			if (el === ".") return false
+		}
+	}
+
+	return true
+}
+
+const possibilities = ['1','2','3','4','5','6','7','8','9']
+
+
+const solveElement = (board, rowIndex, colIndex) => {
+	if (board[rowIndex][colIndex] !== ".") return true
+
+
+	const rowElements = findRowElements(board, rowIndex, colIndex)
+	const colElements = findColElements(board, rowIndex, colIndex)
+	const boxElements = findBoxElements(board, rowIndex, colIndex)
+
+	const possibilitiesToRemove = [...rowElements, ...colElements, ...boxElements]
+
+	const remainingPossibilties = possibilities.filter((number) => !possibilitiesToRemove.includes(number))
+	if (!remainingPossibilties.length) return false
+
+	if (remainingPossibilties.length === 1) {
+		board[rowIndex][colIndex] = remainingPossibilties[0]
+
+		const solvable = solveRowElements(board, rowIndex) && solveColElements(board, colIndex) && solveBoxElements(board, rowIndex, colIndex)
+		if (!solvable) return false
+	}
+
+	return true
+
+}
+
+const findRowElements = (board, rowIndex, colIndex) => {
+	const result = []
+
+	for (let j = 0; j < 9; j++) {
+		const value = board[rowIndex][j]
+		if (j !== colIndex && value !== ".") result.push(value) 
+	}
+
+	return result
+}
+
+const findColElements = (board, rowIndex, colIndex) => {
+	const result = []
+
+	for (let i = 0; i < 9; i++) {
+		const value = board[i][colIndex]
+		if (i !== rowIndex && value !== ".") result.push(value) 
+	}
+
+	return result
+}
+
+const findBoxElements = (board, rowIndex, colIndex) => {
+	const result = []
+
+	for (let i = Math.floor(rowIndex/3) * 3; i < Math.floor(rowIndex/3) * 3 + 3; i++){
+		for (let j = Math.floor(colIndex/3) * 3; j < Math.floor(colIndex/3) * 3 + 3; j++){
+			const value = board[i][j]
+
+			if (!(i === rowIndex && j === colIndex) && value !== ".") {
+				result.push(value)
+			}
+		}
+	}
+
+	return result
+}
+
+const solveRowElements = (board, rowIndex) => {
+	for (let j = 0; j < 9; j++) {
+		const solvable = solveElement(board, rowIndex, j)	
+		if (!solvable) return false
+	}
+
+	return true
+}
+
+
+const solveColElements = (board, colIndex) => {
+	for (let i = 0; i < 9; i++) {
+		const solvable = solveElement(board, i, colIndex)
+		if (!solvable) return false
+	}
+
+	return true
+}
+
+
+const solveBoxElements = (board, rowIndex, colIndex) => {
+	for (let i = Math.floor(rowIndex/3) * 3; i < Math.floor(rowIndex/3) * 3 + 3; i++){
+		for (let j = Math.floor(colIndex/3) * 3; j < Math.floor(colIndex/3) * 3 + 3; j++){
+			const solvable = solveElement(board, i, j)
+			if (!solvable) return false
+		}
+	}
+
+	return true
+}
+
+const isSameBoard = (board, prevBoard) => {
+	for (let i = 0; i < 9; i++) {
+		for (let j = 0; j < 9; j++) {
+			if (board[i][j] !== prevBoard[i][j]) return false
+		}
+	}
+	return true
+}
+
+const generateBranchBoards = (board) => {
+	let leastPossibilitiesPosition = {
+		rowIndex: 0,
+		colIndex: 0, 
+		possibilities: ['1','2','3','4','5','6','7','8','9']
+	}
+
+	for (let rowIndex = 0; rowIndex < 9; rowIndex++) {
+		for (let colIndex = 0; colIndex < 9; colIndex++) {
+			if (board[rowIndex][colIndex] === ".") {
+				const rowElements = findRowElements(board, rowIndex, colIndex)
+				const colElements = findColElements(board, rowIndex, colIndex)
+				const boxElements = findBoxElements(board, rowIndex, colIndex)
+	
+				const possibilitiesToRemove = [...rowElements, ...colElements, ...boxElements]
+	
+				const remainingPossibilties = possibilities.filter((number) => !possibilitiesToRemove.includes(number))
+	
+				if (remainingPossibilties.length < leastPossibilitiesPosition.possibilities.length) {
+					leastPossibilitiesPosition.rowIndex = rowIndex
+					leastPossibilitiesPosition.colIndex = colIndex
+					leastPossibilitiesPosition.possibilities = remainingPossibilties
+				}
+			}
+		}
+	}
+
+
+	return leastPossibilitiesPosition.possibilities.map((number) => {
+		const boardCopy = board.map((row) => [...row])
+		boardCopy[leastPossibilitiesPosition.rowIndex][leastPossibilitiesPosition.colIndex] = number
+		return boardCopy
+	})
+
+
+}
+
 
 const board = [
 	[".", ".", "9", "7", "4", "8", ".", ".", "."],
@@ -152,4 +200,5 @@ const board = [
 	[".", ".", ".", ".", ".", ".", ".", ".", "6"],
 	[".", ".", ".", "2", "7", "5", "9", ".", "."],
 ];
-solveSudoku(board);
+
+console.log(solveSudoku(board))
